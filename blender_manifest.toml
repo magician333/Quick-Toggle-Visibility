@@ -4,7 +4,7 @@ schema_version = "1.0.0"
 # Change the values according to your extension
 id = "quicktogglevisibility"
 version = "1.0.0"
-name = "Quickt Toggle Visibility"
+name = "Quick Toggle Visibility"
 tagline = "Toggle object visibility faster and simpler"
 maintainer = "purplefire"
 # Supported types: "add-on", "theme"
