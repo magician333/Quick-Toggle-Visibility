@@ -12,7 +12,6 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import bpy
-from bpy.props import EnumProperty
 from bpy.types import AddonPreferences
 
 bl_info = {
@@ -38,7 +37,7 @@ class KeyframeTogglePreferences(AddonPreferences):
     for num in range(48, 58):
         items.append((chr(num), chr(num), ""))
 
-    key_type: EnumProperty(
+    key_type: bpy.props.EnumProperty(
         name="Keymap",
         description="Choose the key type for the shortcut",
         items=items,
@@ -49,7 +48,7 @@ class KeyframeTogglePreferences(AddonPreferences):
 
     use_alt: bpy.props.BoolProperty(name="Use Alt", default=True)  # type: ignore
 
-    display_type_hidden: EnumProperty(
+    display_type_hidden: bpy.props.EnumProperty(
         name="Display When Hidden",
         description="Choose how objects appear when hidden",
         items=[
@@ -164,6 +163,28 @@ def keyframe_toggle_backward(context):
             print(f"Error toggling object {obj.name}: {str(e)}")
 
 
+def hide_object(context):
+    prefs = get_preferences()
+    for obj in context.selected_objects:
+        if prefs.display_in_render:
+            obj.hide_render = True
+        if prefs.display_type_hidden == "Hide":
+            obj.hide_viewport = True
+        else:
+            obj.display_type = prefs.display_type_hidden
+
+
+def show_object(context):
+    prefs = get_preferences()
+    for obj in context.selected_objects:
+        if prefs.display_in_render:
+            obj.hide_render = False
+        if prefs.display_type_hidden == "Hide":
+            obj.hide_viewport = False
+        else:
+            obj.display_type = "SOLID"
+
+
 class ObjectVisibilityPieMenu(bpy.types.Menu):
     bl_label = "Object Visibility Pie Menu"
     bl_idname = "OBJECT_MT_visibility_pie_menu"
@@ -171,8 +192,10 @@ class ObjectVisibilityPieMenu(bpy.types.Menu):
     def draw(self, context):
         layout = self.layout
         pie = layout.menu_pie()
-        pie.operator(ExecuteKeyframeToggleForward.bl_idname, text="Hide->Display")
-        pie.operator(ExecuteKeyframeToggleBackward.bl_idname, text="Display->Hide")
+        pie.operator(ExecuteKeyframeToggleForward.bl_idname, text="Hide->Show")
+        pie.operator(ExecuteKeyframeToggleBackward.bl_idname, text="Show->Hide")
+        pie.operator(ExecuteHideObject.bl_idname, text="Hide")
+        pie.operator(ExecuteShowObject.bl_idname, text="Show")
 
 
 class ExecuteKeyframeToggleForward(bpy.types.Operator):
@@ -195,11 +218,33 @@ class ExecuteKeyframeToggleBackward(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class ExecuteHideObject(bpy.types.Operator):
+    bl_idname = "object.execute_hide_object"
+    bl_label = "Execute Hide Object"
+    bl_description = "Hide Object"
+
+    def execute(self, context):
+        hide_object(context)
+        return {"FINISHED"}
+
+
+class ExecuteShowObject(bpy.types.Operator):
+    bl_idname = "object.execute_show_object"
+    bl_label = "Execute Show Object"
+    bl_description = "Show Object"
+
+    def execute(self, context):
+        show_object(context)
+        return {"FINISHED"}
+
+
 classes = (
     KeyframeTogglePreferences,
     ObjectVisibilityPieMenu,
     ExecuteKeyframeToggleForward,
     ExecuteKeyframeToggleBackward,
+    ExecuteHideObject,
+    ExecuteShowObject,
 )
 
 
